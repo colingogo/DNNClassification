@@ -1,9 +1,9 @@
+# EFE BOZKIR, TU Munich, Department of Computer Science
 import numpy as np
 import matplotlib.pyplot as plt
 import math
 import caffe
 import os
-#%matplotlib inline
 
 caffe_root = '../'
 import sys
@@ -11,7 +11,7 @@ sys.path.insert(0, caffe_root + 'python')
 
 MODEL_FILE = '../models/bvlc_reference_caffenet/deploy.prototxt'
 PRETRAINED = '../models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel'
-IMAGE_FILE = 'images/Images/IMG_8.jpg'
+IMAGE_FILE = 'images/Images/IMG_7.jpg'
 
 caffe.set_mode_cpu()
 net = caffe.Classifier(MODEL_FILE, PRETRAINED,
@@ -20,24 +20,22 @@ net = caffe.Classifier(MODEL_FILE, PRETRAINED,
                        raw_scale=255,
                        image_dims=(256, 256))
 
-# Read the test image
-input_image = caffe.io.load_image(IMAGE_FILE)
-#plt.imshow(input_image)
+# Read the test image and preprocess
+myInputImg = caffe.io.load_image(IMAGE_FILE)
+lx,ly,lz = myInputImg.shape
+croppedImg = myInputImg[lx /4:-lx/4,ly/4:-ly/4]
+croppedImg = plt.imsave('images/Images/croppedIMG7.jpg',croppedImg)
 
-# Preprocess the input image. Maybe size or sharpening?
-resized_img = caffe.io.resize_image(im=input_image, new_dims=(256,256))
-#processed_img = caffe.io.oversample(images=resized_img, crop_dims=(128,128))
-
-prediction = net.predict([resized_img])
+# Read raw test image or preprocessed test image
+input_image = caffe.io.load_image('images/Images/croppedIMG7.jpg')
+#input_image = caffe.io.load_image(IMAGE_FILE) #if you want to use raw test image, uncomment this line.
+prediction = net.predict([input_image])
 print 'Prediction shape:', prediction[0].shape
-#plt.plot(prediction[0])
 print 'Predicted class:', prediction[0].argmax()
-print 'probability in the end', prediction[0][prediction[0].argmax()]
 
 # Softmax calculation // Probability of the class
 out = net.forward()
 print 'Probability of the class: ', max(out['prob'][0])
-
 
 # Entropy calculation
 entropy = 0.0
@@ -46,28 +44,3 @@ for x in range(0,1000):
 entropy = entropy*-1
 print 'Entropy:', entropy
 
-prediction = net.predict([resized_img], oversample=False)
-print 'prediction shape:', prediction[0].shape
-#plt.plot(prediction[0])
-print 'predicted class:', prediction[0].argmax()
-
-#%timeit net.predict([input_image])
-
-# Resize the image to the standard (256, 256) and oversample net input sized crops.
-# /////input_oversampled = caffe.io.oversample([caffe.io.resize_image(input_image, net.image_dims)], net.crop_dims)
-# 'data' is the input blob name in the model definition, so we preprocess for that input.
-# /////caffe_input = np.asarray([net.transformer.preprocess('data', in_) for in_ in input_oversampled])
-# forward() takes keyword args for the input blobs with preprocessed input arrays.
-#%timeit net.forward(data=caffe_input)
-
-#/////caffe.set_mode_gpu()
-
-#prediction = net.predict([input_image])
-#print 'prediction shape:', prediction[0].shape
-#plt.plot(prediction[0])
-
-# Full pipeline timing.
-#%timeit net.predict([input_image])
-
-# Forward pass timing.
-#%timeit net.forward(data=caffe_input)
